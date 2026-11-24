@@ -1,0 +1,16 @@
+### Register customer
+POST http://localhost:8080/api/customers
+Content-Type: application/json
+
+{
+  "fullName": "Test Customer",
+  "email": "testcustomer@example.com",
+  "phone": "9876543210",
+  "address": "Test Address"
+}
+
+### Get all customers
+GET http://localhost:8080/api/customers
+
+### Get customer by ID
+GET http://localhost:8080/api/customers/1
