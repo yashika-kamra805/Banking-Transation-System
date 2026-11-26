@@ -68,8 +68,11 @@ public class AccountRepository {
         if (generatedId != null) {
             account.setAccountId(generatedId.longValue());
         }
-
-        return account;
+        return jdbcTemplate.queryForObject(
+                "SELECT * FROM accounts WHERE account_id = ?",
+                accountRowMapper,
+                account.getAccountId()
+        );
     }
 
     public List<Account> findByCustomerId(Long customerId) {

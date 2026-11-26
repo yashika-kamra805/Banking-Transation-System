@@ -1,13 +1,29 @@
+
 package com.banking.bankingtransactionsystem.model;
 
+import jakarta.validation.constraints.Pattern;
 import java.time.LocalDateTime;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 
 public class Customer {
 
     private Long customerId;
+
+    @NotBlank(message = "Customer name cannot be empty")
+    @Pattern(
+            regexp = "^[\\p{L}][\\p{L} .'-]*$",
+            message = "Please enter a valid customer name"
+    )
     private String fullName;
+
+    @NotBlank(message = "Email cannot be empty")
+    @Email(message = "Please enter a valid email address")
     private String email;
+
+    @NotBlank(message = "Phone number cannot be empty")
     private String phone;
+
     private String address;
     private LocalDateTime createdAt;
 

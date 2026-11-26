@@ -1,5 +1,6 @@
 package com.banking.bankingtransactionsystem.controller;
 
+import jakarta.validation.Valid;
 import com.banking.bankingtransactionsystem.model.Customer;
 import com.banking.bankingtransactionsystem.service.CustomerService;
 import org.springframework.http.HttpStatus;
@@ -20,7 +21,7 @@ public class CustomerController {
 
     @PostMapping
     public ResponseEntity<String> registerCustomer(
-            @RequestBody Customer customer) {
+            @Valid @RequestBody Customer customer) {
 
         customerService.registerCustomer(customer);
 

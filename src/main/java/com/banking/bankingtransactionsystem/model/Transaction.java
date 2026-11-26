@@ -1,5 +1,8 @@
 package com.banking.bankingtransactionsystem.model;
 
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -8,7 +11,13 @@ public class Transaction {
     private Long transactionId;
     private Long fromAccountId;
     private Long toAccountId;
+    @NotBlank(message = "Transaction type is required")
     private String transactionType;
+    @NotNull(message = "Transaction amount is required")
+    @DecimalMin(
+            value = "0.01",
+            message = "Transaction amount must be greater than zero"
+    )
     private BigDecimal amount;
     private String status;
     private String description;

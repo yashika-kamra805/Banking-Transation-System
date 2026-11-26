@@ -1,5 +1,11 @@
 package com.banking.bankingtransactionsystem.controller;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Pattern;
 import com.banking.bankingtransactionsystem.model.Account;
 import com.banking.bankingtransactionsystem.service.AccountService;
 import org.springframework.http.HttpStatus;
@@ -20,8 +26,20 @@ public class AccountController {
     }
     public static class CreateAccountRequest {
 
+        @NotNull(message = "Customer ID is required")
+        @Positive(message = "Customer ID must be greater than zero")
         private Long customerId;
+        @NotBlank(message = "Account type is required")
+        @Pattern(
+                regexp = "(?i)^(SAVINGS|CURRENT)$",
+                message = "Account type must be SAVINGS or CURRENT"
+        )
         private String accountType;
+        @NotNull(message = "Opening balance is required")
+        @DecimalMin(
+                value = "0.00",
+                message = "Opening balance cannot be negative"
+        )
         private BigDecimal openingBalance;
 
         public Long getCustomerId() {
@@ -50,7 +68,7 @@ public class AccountController {
     }
     @PostMapping
     public ResponseEntity<Account> createAccount(
-            @RequestBody CreateAccountRequest request) {
+            @Valid @RequestBody CreateAccountRequest request) {
 
         Account account = accountService.createAccount(
                 request.getCustomerId(),
