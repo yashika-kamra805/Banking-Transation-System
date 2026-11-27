@@ -21,7 +21,16 @@ public class Transaction {
     private BigDecimal amount;
     private String status;
     private String description;
+    private String idempotencyKey;
     private LocalDateTime createdAt;
+
+    public String getIdempotencyKey() {
+        return idempotencyKey;
+    }
+
+    public void setIdempotencyKey(String idempotencyKey) {
+        this.idempotencyKey = idempotencyKey;
+    }
 
     public Transaction() {
     }

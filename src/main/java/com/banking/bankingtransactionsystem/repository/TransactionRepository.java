@@ -1,5 +1,6 @@
 package com.banking.bankingtransactionsystem.repository;
 
+import java.util.Optional;
 import com.banking.bankingtransactionsystem.model.Transaction;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -38,6 +39,7 @@ public class TransactionRepository {
         transaction.setAmount(rs.getBigDecimal("amount"));
         transaction.setStatus(rs.getString("status"));
         transaction.setDescription(rs.getString("description"));
+        transaction.setIdempotencyKey(rs.getString("idempotency_key"));
 
         if (rs.getTimestamp("created_at") != null) {
             transaction.setCreatedAt(
@@ -50,11 +52,11 @@ public class TransactionRepository {
     public Transaction save(Transaction transaction) {
 
         String sql = """
-            INSERT INTO transactions
-            (from_account_id, to_account_id, transaction_type,
-             amount, status, description)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """;
+    INSERT INTO transactions
+    (from_account_id, to_account_id, transaction_type,
+     amount, status, description, idempotency_key)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    """;
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
@@ -78,6 +80,7 @@ public class TransactionRepository {
             ps.setBigDecimal(4, transaction.getAmount());
             ps.setString(5, transaction.getStatus());
             ps.setString(6, transaction.getDescription());
+            ps.setString(7, transaction.getIdempotencyKey());
 
             return ps;
         }, keyHolder);
@@ -99,13 +102,100 @@ public class TransactionRepository {
         return jdbcTemplate.query(sql, rowMapper);
     }
 
-    public List<Transaction> findByAccountId(Long accountId) {
-        String sql = """
-                SELECT * FROM transactions
-                WHERE from_account_id = ? OR to_account_id = ?
-                ORDER BY created_at DESC
-                """;
 
-        return jdbcTemplate.query(sql, rowMapper, accountId, accountId);
+    public List<Transaction> searchTransactions(
+            String transactionType,
+            String status,
+            java.time.LocalDateTime startDate,
+            java.time.LocalDateTime endDate) {
+
+        StringBuilder sql = new StringBuilder(
+                "SELECT * FROM transactions WHERE 1=1"
+        );
+
+        List<Object> parameters = new java.util.ArrayList<>();
+
+        if (transactionType != null && !transactionType.isBlank()) {
+            sql.append(" AND transaction_type = ?");
+            parameters.add(transactionType);
+        }
+
+        if (status != null && !status.isBlank()) {
+            sql.append(" AND status = ?");
+            parameters.add(status);
+        }
+
+        if (startDate != null) {
+            sql.append(" AND created_at >= ?");
+            parameters.add(java.sql.Timestamp.valueOf(startDate));
+        }
+
+        if (endDate != null) {
+            sql.append(" AND created_at <= ?");
+            parameters.add(java.sql.Timestamp.valueOf(endDate));
+        }
+
+        sql.append(" ORDER BY created_at DESC");
+
+        return jdbcTemplate.query(
+                sql.toString(),
+                rowMapper,
+                parameters.toArray()
+        );
     }
+    public List<Transaction> findByAccountId(Long accountId) {
+
+        String sql = """
+            SELECT * FROM transactions
+            WHERE from_account_id = ? OR to_account_id = ?
+            ORDER BY created_at DESC
+            """;
+
+        return jdbcTemplate.query(
+                sql,
+                rowMapper,
+                accountId,
+                accountId
+        );
+    }
+    public void lockIdempotencyKey(String idempotencyKey) {
+
+        String insertSql = """
+        INSERT INTO idempotency_key_locks (idempotency_key)
+        VALUES (?)
+        ON DUPLICATE KEY UPDATE
+        idempotency_key = VALUES(idempotency_key)
+        """;
+
+        jdbcTemplate.update(insertSql, idempotencyKey);
+
+        jdbcTemplate.queryForObject(
+                """
+                SELECT idempotency_key
+                FROM idempotency_key_locks
+                WHERE idempotency_key = ?
+                FOR UPDATE
+                """,
+                String.class,
+                idempotencyKey
+        );
+    }
+    public Optional<Transaction> findByIdempotencyKey(String idempotencyKey) {
+
+        String sql = """
+        SELECT * FROM transactions
+        WHERE idempotency_key = ?
+        """;
+
+        List<Transaction> results = jdbcTemplate.query(
+                sql,
+                rowMapper,
+                idempotencyKey
+        );
+
+        return results.isEmpty()
+                ? Optional.empty()
+                : Optional.of(results.get(0));
+    }
+
 }
