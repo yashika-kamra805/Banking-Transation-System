@@ -1,9 +1,13 @@
 package com.banking.bankingtransactionsystem.service;
 
+import com.banking.bankingtransactionsystem.exception.InvalidTransactionException;
+import com.banking.bankingtransactionsystem.exception.DuplicateTransactionException;
+import com.banking.bankingtransactionsystem.exception.AccountNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.Optional;
 import java.util.List;
+import com.banking.bankingtransactionsystem.exception.InsufficientBalanceException;
 import com.banking.bankingtransactionsystem.service.FailedTransactionService;
 import com.banking.bankingtransactionsystem.model.Transaction;
 import com.banking.bankingtransactionsystem.repository.TransactionRepository;
@@ -51,7 +55,8 @@ public class TransactionService {
         );
 
         if (accounts.isEmpty()) {
-            throw new IllegalArgumentException("Account not found");
+            throw new AccountNotFoundException(
+                    "Account not found with ID: " + accountId);
         }
 
         Map<String, Object> account = accounts.get(0);
@@ -65,7 +70,7 @@ public class TransactionService {
 
     private void validateAmount(BigDecimal amount) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException(
+            throw new InvalidTransactionException(
                     "Amount must be greater than zero");
         }
     }
@@ -97,7 +102,7 @@ public class TransactionService {
                             existing.getToAccountId(), toAccountId)
                             && existing.getAmount().compareTo(amount) == 0;
             if (!sameRequest) {
-                throw new IllegalArgumentException(
+                throw new DuplicateTransactionException(
                         "Idempotency key has already been used for a different request"
                 );
             }
@@ -236,7 +241,7 @@ public class TransactionService {
             BigDecimal balance = (BigDecimal) account.get("balance");
 
             if (balance.compareTo(amount) < 0) {
-                throw new IllegalArgumentException(
+                throw new InsufficientBalanceException(
                         "Insufficient account balance");
             }
 
@@ -333,7 +338,7 @@ public class TransactionService {
 
             if (fromAccountId == null || toAccountId == null ||
                     fromAccountId.equals(toAccountId)) {
-                throw new IllegalArgumentException(
+                throw new InvalidTransactionException(
                         "Please provide two different account IDs");
             }
 

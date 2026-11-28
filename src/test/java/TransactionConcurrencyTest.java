@@ -1,9 +1,8 @@
-
 package com.banking.bankingtransactionsystem;
 
+import com.banking.bankingtransactionsystem.exception.InsufficientBalanceException;
 import com.banking.bankingtransactionsystem.model.Transaction;
 import com.banking.bankingtransactionsystem.service.TransactionService;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -72,7 +71,7 @@ class TransactionConcurrencyTest {
                                 key1
                         );
                         return true;
-                    } catch (IllegalArgumentException exception) {
+                    } catch (InsufficientBalanceException exception) {
                         return false;
                     }
                 });
